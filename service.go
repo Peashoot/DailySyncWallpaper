@@ -17,6 +17,8 @@ func init() {
 	config.getConf()
 }
 
+var logger service.Logger
+
 // Program structures.
 // Define Start and Stop methods.
 type program struct {
