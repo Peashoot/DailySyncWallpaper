@@ -91,7 +91,7 @@ func download() {
 			setWallpaper(fileName)
 			Println("End set wallpaper...")
 		} else {
-			Println("Image already exists...")
+			Println(fmt.Sprintf("Image %s already exists...", fileName))
 		}
 	}
 }

@@ -10,13 +10,11 @@ import (
 	"fmt"
 
 	"github.com/cron"
-
 	"github.com/kardianos/service"
 )
 
 func init() {
 	config.getConf()
-	LoadLogger()
 }
 
 // Program structures.
@@ -88,7 +86,7 @@ func main() {
 		Fatalln(err)
 	}
 	errs := make(chan error, 5)
-	_, err = s.Logger(errs)
+	logger, err = s.Logger(errs)
 	if err != nil {
 		Fatalln(err)
 	}

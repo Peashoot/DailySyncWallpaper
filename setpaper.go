@@ -216,7 +216,7 @@ func setDesktopWallpaper(bgFile string, style WallpaperStyle) error {
 
 	ok := SystemParametersInfo(SPI_SETDESKWALLPAPER, FALSE, nil, SPIF_UPDATEINIFILE|SPIF_SENDWININICHANGE)
 	if !ok {
-		return errors.New("Desktop background Settings fail.")
+		return errors.New("Desktop background settings fail")
 	}
 	return nil
 }
