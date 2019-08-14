@@ -27,9 +27,9 @@ type program struct {
 
 func (p *program) Start(s service.Service) error {
 	if service.Interactive() {
-		Println("Running in terminal.")
+		logger.Info("Running in terminal.")
 	} else {
-		Println("Running under service manager.")
+		logger.Info("Running under service manager.")
 	}
 	p.exit = make(chan struct{})
 
@@ -38,6 +38,7 @@ func (p *program) Start(s service.Service) error {
 	return nil
 }
 func (p *program) run() error {
+	LoadLogger()
 	Println(fmt.Sprintf("I'm running %v.", service.Platform()))
 	download()
 	timer := cron.New()
@@ -57,7 +58,7 @@ func (p *program) run() error {
 }
 func (p *program) Stop(s service.Service) error {
 	// Any work in Stop should be quick, usually a few seconds at most.
-	Println("I'm Stopping!")
+	logger.Info("I'm Stopping!")
 	close(p.exit)
 	return nil
 }
@@ -85,19 +86,19 @@ func main() {
 	prg := &program{}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
-		Fatalln(err)
+		logger.Error(err)
 	}
 	errs := make(chan error, 5)
 	logger, err = s.Logger(errs)
 	if err != nil {
-		Fatalln(err)
+		logger.Error(err)
 	}
 
 	go func() {
 		for {
 			err := <-errs
 			if err != nil {
-				Fatalln(err)
+				logger.Error(err)
 			}
 		}
 	}()
@@ -105,13 +106,13 @@ func main() {
 	if len(*svcFlag) != 0 {
 		err := service.Control(s, *svcFlag)
 		if err != nil {
-			Println(fmt.Sprintf("Valid actions: %q", service.ControlAction))
-			Fatalln(err)
+			logger.Infof("Valid actions: %q", service.ControlAction)
+			logger.Error(err)
 		}
 		return
 	}
 	err = s.Run()
 	if err != nil {
-		Fatalln(err)
+		logger.Error(err)
 	}
 }
