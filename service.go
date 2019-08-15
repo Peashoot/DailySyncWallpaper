@@ -8,6 +8,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os/user"
 
 	"github.com/cron"
 	"github.com/kardianos/service"
@@ -104,6 +105,11 @@ func main() {
 	}()
 
 	if len(*svcFlag) != 0 {
+		if *svcFlag == "install" {
+			cur, _ := user.Current()
+			config.UserName = cur.Username
+			config.setConf()
+		}
 		err := service.Control(s, *svcFlag)
 		if err != nil {
 			logger.Infof("Valid actions: %q", service.ControlAction)

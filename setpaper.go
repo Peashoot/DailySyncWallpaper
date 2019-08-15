@@ -3,9 +3,11 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"image/jpeg"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"golang.org/x/image/bmp"
@@ -61,12 +63,18 @@ func init() {
 // 设置本地图片为桌面壁纸
 func setWallpaper(imgFile string) {
 	var err error
-	regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
+	// regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
+
+	cur, err := user.Lookup(config.UserName)
+	checkErr(err)
+	keypath := cur.Uid + `\Control Panel\Desktop`
+	Println("The path of registry is " + keypath)
+	regist, err = registry.OpenKey(registry.USERS, keypath, registry.ALL_ACCESS)
 	checkErr(err)
 	defer regist.Close()
 	style := WallpaperStyle(2)
 	setDesktopWallpaper(imgFile, style)
-	log.Printf("Set wallpaper file and style --> %s, %s\n", imgFile, style)
+	Println(fmt.Sprintf("Set wallpaper file and style --> %s, %s", imgFile, style))
 }
 
 // test
@@ -137,7 +145,7 @@ func main2() {
 
 func checkErr(err error) {
 	if err != nil {
-		log.Fatal(err)
+		Fatalln(err)
 	}
 }
 
@@ -222,8 +230,12 @@ func setDesktopWallpaper(bgFile string, style WallpaperStyle) error {
 }
 
 func setRegistString(name, value string) {
-	err := regist.SetStringValue(name, value)
+	oldvalue, _, err := regist.GetStringValue(name)
 	checkErr(err)
+	if oldvalue != value {
+		err = regist.SetStringValue(name, value)
+		checkErr(err)
+	}
 }
 
 func setScreenSaver(uiAction, uiParam uint32) {
