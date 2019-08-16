@@ -7,7 +7,6 @@ import (
 	"image/jpeg"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"golang.org/x/image/bmp"
@@ -63,13 +62,7 @@ func init() {
 // 设置本地图片为桌面壁纸
 func setWallpaper(imgFile string) {
 	var err error
-	// regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
-
-	cur, err := user.Lookup(config.UserName)
-	checkErr(err)
-	keypath := cur.Uid + `\Control Panel\Desktop`
-	Println("The path of registry is " + keypath)
-	regist, err = registry.OpenKey(registry.USERS, keypath, registry.ALL_ACCESS)
+	regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
 	checkErr(err)
 	defer regist.Close()
 	style := WallpaperStyle(2)
