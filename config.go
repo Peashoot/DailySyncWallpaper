@@ -10,8 +10,9 @@ import (
 )
 
 type conf struct {
-	LogPath string `yaml:"LogPath"`
-	ImgPath string `yaml:"ImgPath"`
+	LogPath  string `yaml:"LogPath"`
+	ImgPath  string `yaml:"ImgPath"`
+	CronRule string `yaml:"CronRule"`
 }
 
 // 配置

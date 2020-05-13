@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,7 +22,7 @@ func getImgURL() (bool, string) {
 	res, err := http.DefaultClient.Do(req)
 	var imgURL string
 	if err != nil {
-		Fatalln(err)
+		Panicln(err)
 		return false, imgURL
 	}
 	defer res.Body.Close()
@@ -51,7 +52,7 @@ func getImgURL() (bool, string) {
 func getFileName(imgURL string) string {
 	u, err := url.Parse(imgURL)
 	if err != nil {
-		Fatalln(err)
+		Panicln(err)
 	}
 	m, _ := url.ParseQuery(u.RawQuery)
 	return m["id"][0]
@@ -61,14 +62,14 @@ func getFileName(imgURL string) string {
 func saveImgs(imgURL string, fileName string) {
 	res, err := http.Get(imgURL)
 	if err != nil {
-		Fatalln(err)
+		Panicln(err)
 	}
 	defer res.Body.Close()
 	// 获得get请求响应的reader对象
 	reader := bufio.NewReaderSize(res.Body, 32*1024)
 	file, err := os.Create(fileName)
 	if err != nil {
-		Fatalln(err)
+		Panicln(err)
 	}
 	// 获得文件的writer对象
 	writer := bufio.NewWriter(file)
@@ -79,6 +80,12 @@ func saveImgs(imgURL string, fileName string) {
 
 // 下载bing图片并设置为壁纸
 func download() {
+	defer func() {
+		err := recover()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 	result, imgURL := getImgURL()
 	if result {
 		fileName := config.ImgPath + getFileName(imgURL)

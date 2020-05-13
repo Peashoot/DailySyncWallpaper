@@ -6,15 +6,6 @@ import (
 )
 
 const (
-	// 获取屏幕保护开关
-	SPI_GETSCREENSAVEACTIVE = 0x0010
-	// 设置屏保开关
-	SPI_SETSCREENSAVEACTIVE = 0x0011
-	// 设置屏保等待时间
-	SPI_SETSCREENSAVETIMEOUT = 0x000F
-	// 设备屏保在恢复时显示屏幕
-	SPI_SETSCREENSAVESECURE = 0x0077
-
 	// 设置桌面背景
 	SPI_SETDESKWALLPAPER = 0x0014
 
@@ -87,8 +78,4 @@ func GetVersion() int64 {
 		0,
 		0)
 	return int64(ret)
-}
-
-func stringToPointer(str string) unsafe.Pointer {
-	return unsafe.Pointer(syscall.StringToUTF16Ptr(str))
 }

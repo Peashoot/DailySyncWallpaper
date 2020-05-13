@@ -1,0 +1,1 @@
+go build -o wallpaper.exe -ldflags "-H windowsgui" .

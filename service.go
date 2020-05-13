@@ -12,13 +12,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cron"
-	"github.com/kardianos/service"
+	"github.com/robfig/cron"
 	"golang.org/x/sys/windows/registry"
 )
 
 func init() {
+	// 获取配置
 	config.getConf()
+	// 防止重复启动
 	iManPid := fmt.Sprint(os.Getpid())
 	tmpDir := os.TempDir()
 	if err := ProcExsit(tmpDir); err == nil {
@@ -30,18 +31,12 @@ func init() {
 	}
 }
 
-// Service setup.
-//   Define service config.
-//   Create the service.
-//   Setup the logger.
-//   Handle service controls (optional).
-//   Run the service.
 func main() {
 	SetAutoRun()
-	Println(fmt.Sprintf("I'm running %v.", service.Platform()))
 	download()
 	timer := cron.New()
-	spec := "0 */30 * * * ?"
+	// 每0或30分时执行一次
+	spec := config.CronRule
 	timer.AddFunc(spec, func() {
 		Println("cron running...")
 		download()
@@ -62,7 +57,8 @@ func ProcExsit(tmpDir string) (err error) {
 			pid, _ := strconv.Atoi(pidStr)
 			_, err := os.FindProcess(pid)
 			if err == nil {
-				return errors.New("[ERROR] DailySyncWallpaper已启动.")
+				Println("DailySyncWallpaper is aleady launched.")
+				return errors.New("[ERROR] DailySyncWallpaper is aleady launched.")
 			}
 		}
 	}
@@ -70,20 +66,21 @@ func ProcExsit(tmpDir string) (err error) {
 	return nil
 }
 
+// 设置开机自启
 func SetAutoRun() {
 	execpath := "\"" + os.Args[0] + "\""
 	Println("Set executable path into auto run registry...")
 	key, exists, err := registry.CreateKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Run`, registry.ALL_ACCESS)
 	if err != nil {
-		Fatalln(err)
+		Panicln(err)
 	}
 	defer key.Close()
 	var oldvalue string
 	if exists {
-		Println("DailySyncWallpaper键已存在")
+		Println("DailySyncWallpaper already exists.")
 		oldvalue, _, _ = key.GetStringValue("DailySyncWallpaper")
 	} else {
-		Println("新建注册表键DailySyncWallpaper")
+		Println("Create new registry of DailySyncWallpaper")
 	}
 	if oldvalue != execpath {
 		key.SetStringValue("DailySyncWallpaper", execpath)
