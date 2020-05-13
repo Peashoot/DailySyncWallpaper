@@ -12,7 +12,7 @@ import (
 type conf struct {
 	LogPath  string `yaml:"LogPath"`
 	ImgPath  string `yaml:"ImgPath"`
-	UserName string `yaml:"UserName"`
+	CronRule string `yaml:"CronRule"`
 }
 
 // 配置
@@ -28,19 +28,6 @@ func (c *conf) getConf() *conf {
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
-	}
-	return c
-}
-
-//持久化配置到本地
-func (c *conf) setConf() *conf {
-	yamlText, err := yaml.Marshal(c)
-	if err != nil {
-		log.Printf("Marshal conf.Get err   #%v ", err)
-	}
-	err = ioutil.WriteFile(GetCurrentDirectory()+`\conf.yaml`, yamlText, 666)
-	if err != nil {
-		log.Printf("Write conf into file.Get err   #%v ", err)
 	}
 	return c
 }

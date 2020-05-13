@@ -2,12 +2,9 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"image/jpeg"
-	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"golang.org/x/image/bmp"
@@ -51,25 +48,10 @@ var (
 	regist registry.Key
 )
 
-func init() {
-	flag.StringVar(&bgFile, "b", "s", "set bg file path.")
-	flag.IntVar(&bgStyle, "style", 2, "set desktop WallpaperStyle")
-	flag.BoolVar(&activeScreen, "a", true, "set screen active.")
-	flag.StringVar(&sFile, "s", "", "set screen save file path.")
-	flag.IntVar(&waitTime, "t", 0, "set screen save wait time.")
-	flag.BoolVar(&passwd, "p", true, "sets whether the screen saver requires the user to enter a password to display the Windows desktop. ")
-}
-
 // 设置本地图片为桌面壁纸
 func setWallpaper(imgFile string) {
 	var err error
-	// regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
-
-	cur, err := user.Lookup(config.UserName)
-	checkErr(err)
-	keypath := cur.Uid + `\Control Panel\Desktop`
-	Println("The path of registry is " + keypath)
-	regist, err = registry.OpenKey(registry.USERS, keypath, registry.ALL_ACCESS)
+	regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
 	checkErr(err)
 	defer regist.Close()
 	style := WallpaperStyle(2)
@@ -77,75 +59,9 @@ func setWallpaper(imgFile string) {
 	Println(fmt.Sprintf("Set wallpaper file and style --> %s, %s", imgFile, style))
 }
 
-// test
-func main2() {
-	flag.Parse()
-
-	var err error
-	regist, err = registry.OpenKey(registry.CURRENT_USER, `Control Panel\Desktop`, registry.ALL_ACCESS)
-	checkErr(err)
-	defer regist.Close()
-
-	// 设置桌面背景
-	if bgFile != "" {
-		style := WallpaperStyle(bgStyle)
-		if bgStyle < 0 || bgStyle > 5 {
-			style = Stretch
-		}
-		setDesktopWallpaper(bgFile, style)
-		log.Printf("设置桌面背景和位置 --> %s, %s\n", bgFile, style)
-	}
-
-	ok := getScreenSaver()
-	log.Printf("获取屏幕保护开关 --> %t\n", ok)
-	// 关闭屏幕保护
-	if ok && !activeScreen {
-		regist.DeleteValue("SCRNSAVE.EXE")
-		log.Println("关闭屏幕保护")
-		return
-	}
-
-	// 设置屏幕保护
-	if sFile != "" && activeScreen {
-		err = regist.SetStringValue("SCRNSAVE.EXE", sFile)
-		checkErr(err)
-		setScreenSaver(SPI_SETSCREENSAVEACTIVE, TRUE)
-		log.Printf("设置屏幕保护 --> %s\n", sFile)
-		ok = getScreenSaver()
-	}
-
-	if ok {
-		// 设置屏幕保护时间
-		if waitTime > 0 {
-			setScreenSaver(SPI_SETSCREENSAVETIMEOUT, uint32(60*waitTime))
-			log.Printf("设置屏幕保护等待时间 --> %d分钟\n", waitTime)
-		}
-
-		// 设置屏幕保护 在恢复时使用密码
-		var (
-			passwdSwitch string
-			passwdBool   uint32
-		)
-		if passwd {
-			passwdSwitch = "1"
-			passwdBool = TRUE
-		} else {
-			passwdSwitch = "0"
-			passwdBool = FALSE
-		}
-		// XP / server 2003
-		setRegistString("ScreenSaverIsSecure", passwdSwitch)
-		// vista or later
-		if checkVersion() {
-			setScreenSaver(SPI_SETSCREENSAVESECURE, passwdBool)
-		}
-		log.Printf("设置屏幕保护恢复时是否使用密码 --> %t\n", passwd)
-	}
-}
-
 func checkErr(err error) {
 	if err != nil {
-		Fatalln(err)
+		Panicln(err)
 	}
 }
 
@@ -236,19 +152,4 @@ func setRegistString(name, value string) {
 		err = regist.SetStringValue(name, value)
 		checkErr(err)
 	}
-}
-
-func setScreenSaver(uiAction, uiParam uint32) {
-	ok := SystemParametersInfo(uiAction, uiParam, nil, SPIF_UPDATEINIFILE|SPIF_SENDWININICHANGE)
-	if !ok {
-		log.Fatal("Screen saver Settings fail.")
-	}
-}
-
-func getScreenSaver() bool {
-	_, _, err := regist.GetStringValue("SCRNSAVE.EXE")
-	if err != nil {
-		return false
-	}
-	return true
 }

@@ -6,119 +6,84 @@
 package main
 
 import (
-	"flag"
+	"errors"
 	"fmt"
-	"os/user"
+	"io/ioutil"
+	"os"
+	"strconv"
 
-	"github.com/cron"
-	"github.com/kardianos/service"
+	"github.com/robfig/cron"
+	"golang.org/x/sys/windows/registry"
 )
 
 func init() {
+	// 获取配置
 	config.getConf()
-}
-
-var logger service.Logger
-
-// Program structures.
-// Define Start and Stop methods.
-type program struct {
-	exit chan struct{}
-}
-
-func (p *program) Start(s service.Service) error {
-	if service.Interactive() {
-		logger.Info("Running in terminal.")
+	// 防止重复启动
+	iManPid := fmt.Sprint(os.Getpid())
+	tmpDir := os.TempDir()
+	if err := ProcExsit(tmpDir); err == nil {
+		pidFile, _ := os.Create(tmpDir + "\\wallpaper.pid")
+		defer pidFile.Close()
+		pidFile.WriteString(iManPid)
 	} else {
-		logger.Info("Running under service manager.")
+		os.Exit(1)
 	}
-	p.exit = make(chan struct{})
-
-	// Start should not block. Do the actual work async.
-	go p.run()
-	return nil
 }
-func (p *program) run() error {
-	LoadLogger()
-	Println(fmt.Sprintf("I'm running %v.", service.Platform()))
+
+func main() {
+	SetAutoRun()
 	download()
 	timer := cron.New()
-	spec := "0 */30 * * * ?"
+	// 每0或30分时执行一次
+	spec := config.CronRule
 	timer.AddFunc(spec, func() {
 		Println("cron running...")
 		download()
 	})
 	timer.Start()
-	for {
-		select {
-		case <-p.exit:
-			timer.Stop()
-			return nil
+	select {}
+}
+
+// 判断进程是否启动
+func ProcExsit(tmpDir string) (err error) {
+	iManPidFile, err := os.Open(tmpDir + "\\wallpaper.pid")
+	defer iManPidFile.Close()
+
+	if err == nil {
+		filePid, err := ioutil.ReadAll(iManPidFile)
+		if err == nil {
+			pidStr := fmt.Sprintf("%s", filePid)
+			pid, _ := strconv.Atoi(pidStr)
+			_, err := os.FindProcess(pid)
+			if err == nil {
+				Println("DailySyncWallpaper is aleady launched.")
+				return errors.New("[ERROR] DailySyncWallpaper is aleady launched.")
+			}
 		}
 	}
-}
-func (p *program) Stop(s service.Service) error {
-	// Any work in Stop should be quick, usually a few seconds at most.
-	logger.Info("I'm Stopping!")
-	close(p.exit)
+
 	return nil
 }
 
-// Service setup.
-//   Define service config.
-//   Create the service.
-//   Setup the logger.
-//   Handle service controls (optional).
-//   Run the service.
-func main() {
-	svcFlag := flag.String("service", "", "Control the system service.")
-	flag.Parse()
-
-	options := make(service.KeyValue)
-	options["Restart"] = "on-success"
-	options["SuccessExitStatus"] = "1 2 8 SIGKILL"
-	svcConfig := &service.Config{
-		Name:        "DailySyncWallpaper",
-		DisplayName: "必应壁纸同步服务",
-		Description: "定时同步bing壁纸",
-		Option:      options,
-	}
-
-	prg := &program{}
-	s, err := service.New(prg, svcConfig)
+// 设置开机自启
+func SetAutoRun() {
+	execpath := "\"" + os.Args[0] + "\""
+	Println("Set executable path into auto run registry...")
+	key, exists, err := registry.CreateKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Run`, registry.ALL_ACCESS)
 	if err != nil {
-		logger.Error(err)
+		Panicln(err)
 	}
-	errs := make(chan error, 5)
-	logger, err = s.Logger(errs)
-	if err != nil {
-		logger.Error(err)
+	defer key.Close()
+	var oldvalue string
+	if exists {
+		Println("DailySyncWallpaper already exists.")
+		oldvalue, _, _ = key.GetStringValue("DailySyncWallpaper")
+	} else {
+		Println("Create new registry of DailySyncWallpaper")
 	}
-
-	go func() {
-		for {
-			err := <-errs
-			if err != nil {
-				logger.Error(err)
-			}
-		}
-	}()
-
-	if len(*svcFlag) != 0 {
-		if *svcFlag == "install" {
-			cur, _ := user.Current()
-			config.UserName = cur.Username
-			config.setConf()
-		}
-		err := service.Control(s, *svcFlag)
-		if err != nil {
-			logger.Infof("Valid actions: %q", service.ControlAction)
-			logger.Error(err)
-		}
-		return
+	if oldvalue != execpath {
+		key.SetStringValue("DailySyncWallpaper", execpath)
 	}
-	err = s.Run()
-	if err != nil {
-		logger.Error(err)
-	}
+	Println("Success set auto run registry...")
 }

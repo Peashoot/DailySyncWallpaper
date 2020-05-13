@@ -1,3 +1,6 @@
+# 本地日志文件路径和名称
 LogPath: E:\VSCodeDemo\GoDemo\wallpaper\service.log
+# 本地保存图片路径
 ImgPath: C:\Users\Administrator\Pictures\收藏的必应壁纸\
-UserName: DESKTOP-A14SSNS\Administrator
+# 获取壁纸的定时规则（cron）
+CronRule: 0 0 * * * ?
