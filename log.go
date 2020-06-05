@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// 写日志
+// Println 写日志
 func Println(msg string) {
 	file, err := os.OpenFile(config.LogPath, os.O_APPEND|os.O_CREATE, 666)
 	if err != nil {
@@ -17,7 +17,7 @@ func Println(msg string) {
 	log.Println(msg)
 }
 
-// 写错误日志
+// Panicln 写错误日志
 func Panicln(err error) {
 	file, openErr := os.OpenFile(config.LogPath, os.O_APPEND|os.O_CREATE, 666)
 	if openErr != nil {

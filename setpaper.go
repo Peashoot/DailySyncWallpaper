@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
+// WallpaperStyle 壁纸类型
 type WallpaperStyle uint
 
 func (wps WallpaperStyle) String() string {
@@ -18,13 +19,18 @@ func (wps WallpaperStyle) String() string {
 }
 
 const (
-	Fill    WallpaperStyle = iota // 填充
-	Fit                           // 适应
-	Stretch                       // 拉伸
-	Tile                          // 平铺
-	Center                        // 居中
-	Cross                         // 跨区
-
+	// Fill 填充
+	Fill WallpaperStyle = iota
+	// Fit 适应
+	Fit
+	// Stretch 拉伸
+	Stretch
+	// Tile 平铺
+	Tile
+	// Center 居中
+	Center
+	// Cross 跨区
+	Cross
 )
 
 var wallpaperStyles = map[WallpaperStyle]string{
@@ -75,7 +81,7 @@ func checkVersion() bool {
 	return true
 }
 
-// jpg转换为bmp
+// ConvertedWallpaper jpg转换为bmp
 func ConvertedWallpaper(bgfile string) string {
 	file, err := os.Open(bgfile)
 	checkErr(err)
@@ -138,7 +144,7 @@ func setDesktopWallpaper(bgFile string, style WallpaperStyle) error {
 	setRegistString("WallpaperStyle", bgWallpaperStyle)
 	setRegistString("TileWallpaper", bgTileWallpaper)
 
-	ok := SystemParametersInfo(SPI_SETDESKWALLPAPER, FALSE, nil, SPIF_UPDATEINIFILE|SPIF_SENDWININICHANGE)
+	ok := SystemParametersInfo(SpiSerDeskWallpaper, FALSE, nil, SpiFUpdateInifile|SpifSendWininiChange)
 	if !ok {
 		return errors.New("Desktop background settings fail")
 	}

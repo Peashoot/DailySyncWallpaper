@@ -6,17 +6,19 @@ import (
 )
 
 const (
-	// 设置桌面背景
-	SPI_SETDESKWALLPAPER = 0x0014
+	// SpiSerDeskWallpaper 设置桌面背景
+	SpiSerDeskWallpaper = 0x0014
 
-	// Writes the new system-wide parameter setting to the user profile.
-	SPIF_UPDATEINIFILE = 1
+	// SpiFUpdateInifile Writes the new system-wide parameter setting to the user profile.
+	SpiFUpdateInifile = 1
 
-	// Broadcasts the WM_SETTINGCHANGE message after updating the user profile.
-	SPIF_SENDWININICHANGE = 2
+	// SpifSendWininiChange Broadcasts the WM_SETTINGCHANGE message after updating the user profile.
+	SpifSendWininiChange = 2
 
+	// FALSE 0
 	FALSE = 0
-	TRUE  = 1
+	// TRUE 1
+	TRUE = 1
 )
 
 var (
@@ -38,6 +40,7 @@ func init() {
 	getVersion = MustGetProcAddress(libkernel32, "GetVersion")
 }
 
+// MustLoadLibrary 加载动态库
 func MustLoadLibrary(name string) uintptr {
 	lib, err := syscall.LoadLibrary(name)
 	if err != nil {
@@ -47,6 +50,7 @@ func MustLoadLibrary(name string) uintptr {
 	return uintptr(lib)
 }
 
+// MustGetProcAddress 获取动态库地址
 func MustGetProcAddress(lib uintptr, name string) uintptr {
 	addr, err := syscall.GetProcAddress(syscall.Handle(lib), name)
 	if err != nil {
@@ -56,10 +60,7 @@ func MustGetProcAddress(lib uintptr, name string) uintptr {
 	return uintptr(addr)
 }
 
-/* 通过调用Win32 API函数SystemParametersInfo 设置桌面壁纸
-之前我们已经设置了壁纸的类型，但是壁纸图片的实际文件路径还没设置。SystemParametersInfo 这个函数位于user32.dll中，它支持我们从系统中获得硬件和配置信息。它有四个参数，第一个指明调用这个函数所要执行的操作，接下来的两个参数指明将要设置的数据，依据第一个参数的设定。最后一个允许指定改变是否被保存。这里第一个参数我们应指定SPI_SETDESKWALLPAPER，指明我们是要设置壁纸。接下来是文件路径。在Vista之前必须是一个.bmp的文件。Vista和更高级的系统支持.jpg格式。
-SPI_SETDESKWALLPAPER参数使得壁纸改变保存并持续可见。
-*/
+// SystemParametersInfo 通过调用Win32 API函数SystemParametersInfo 设置桌面壁纸
 func SystemParametersInfo(uiAction, uiParam uint32, pvParam unsafe.Pointer, fWinIni uint32) bool {
 	ret, _, _ := syscall.Syscall6(systemParametersInfo, 4,
 		uintptr(uiAction),
@@ -72,6 +73,7 @@ func SystemParametersInfo(uiAction, uiParam uint32, pvParam unsafe.Pointer, fWin
 	return ret != 0
 }
 
+// GetVersion 获取windows系统版本
 func GetVersion() int64 {
 	ret, _, _ := syscall.Syscall(getVersion, 0,
 		0,
