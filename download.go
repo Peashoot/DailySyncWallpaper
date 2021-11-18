@@ -89,11 +89,18 @@ func download() {
 	result, imgURL := getImgURL()
 	if result {
 		fileName := config.ImgPath + getFileName(imgURL)
-		//如果图片文件不存在，就将图片下载下来
-		if _, err := os.Stat(fileName); os.IsNotExist(err) {
+		stat, err := os.Stat(fileName)
+		modYear, modMonth, modDay := stat.ModTime().Date()
+		nowYead, nowMonth, nowDay := time.Now().Date()
+		//如果图片文件不存在，就将图片下载下来，并设置为壁纸
+		if os.IsNotExist(err) {
 			Println(fileName + " doesn't exist, start download...")
 			saveImgs(imgURL, fileName)
 			Println(fileName + " has been saved in current directory")
+			Println("Start set wallpaper...")
+			setWallpaper(fileName)
+			Println("End set wallpaper...")
+		} else if modYear != nowYead || modMonth != nowMonth || modDay != nowDay { // 如果图片文件存在，但是日期不是今天，就将设置图片为壁纸
 			Println("Start set wallpaper...")
 			setWallpaper(fileName)
 			Println("End set wallpaper...")
